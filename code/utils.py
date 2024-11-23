@@ -29,7 +29,6 @@ def make_output_path(file_name):
 
     return output_path
 
-
 def get_data_root():
     """
     Get the root of the data folder.

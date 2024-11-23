@@ -1,4 +1,5 @@
 # This file reads the CPIS shapefiles and the Africa shapefile, and filters the CPIS shapefiles to only include the countries in Africa.
+# It then combines the two CPIS shapefiles into one, detecting overlapping center pivots that are both in 2000 and 2021.
 
 import geopandas as gpd
 import pandas as pd
@@ -18,16 +19,6 @@ CPIS2000 = gpd.read_file(data_root + 'raw/CPIS/World_CPIS_2000.shp')
 CPIS2021 = gpd.read_file(data_root + 'raw/CPIS/World_CPIS_2021.shp')
 Africa = gpd.read_file(data_root + 'raw/Africa_shp/Africa_Boundaries.shp')
 
-# Filter the Africa shapefile to only include the countries in sub-Saharan Africa
-northern_africa_countries = ['Algeria', 'Egypt', 'Libya', 'Morocco', 'Sudan', 'Tunisia', 'Western Sahara']
-Africa = Africa[~Africa['Country'].isin(northern_africa_countries)]
-
-# Save this shapefile
-new_path = data_root + 'intermediate/SSA_shp/'
-if not os.path.exists(new_path):
-    os.makedirs(new_path)
-Africa.to_file(data_root + 'intermediate/SSA_shp/SSA_Boundaries.shp')
-
 # Perform the spatial intersection
 CPIS2000 = gpd.overlay(CPIS2000, Africa, how='intersection')
 CPIS2021 = gpd.overlay(CPIS2021, Africa, how='intersection')
@@ -43,4 +34,7 @@ overlaps = calculate_overlap(CPIS2000, CPIS2021, threshold=0.9)
 combined_gdf = create_combined_geodataframe(CPIS2000, CPIS2021, overlaps)
 
 # Save the combined geodataframe
-combined_gdf.to_file(data_root + 'intermediate/CPIS/SSA_CPIS.shp')
+gdf_path = data_root + 'intermediate/CPIS/'
+if not os.path.exists(gdf_path):
+    os.makedirs(gdf_path)
+combined_gdf.to_file(data_root + 'intermediate/CPIS/combined_CPIS.shp')
