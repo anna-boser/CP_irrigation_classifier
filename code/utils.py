@@ -39,8 +39,8 @@ def get_data_root():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/data/'
 
     # if you're on the server, return '/home/waves/CP_irrigation_classifier/'
-    if os.path.exists('/home/waves/CP_irrigation_classifier/data/'):
-        root = '/home/waves/CP_irrigation_classifier/data/'
+    if os.path.exists('/home/waves/data/CP_irrigation_classifier/data/'):
+        root = '/home/waves/data/CP_irrigation_classifier/data/'
 
     return root
 
