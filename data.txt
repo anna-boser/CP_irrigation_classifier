@@ -1,0 +1,14 @@
+# data paths
+- raw
+	- CPIS
+		- 'World_CPIS_2000.shp' # from https://github.com/DetectCPIS/
+		- 'World_CPIS_2021.shp' # from https://github.com/DetectCPIS/global_cpis_shp; see readme for details
+	- Africa_shp
+		- Africa_Boundaries.shp # from https://hub.arcgis.com/datasets/07610d73964e4d39ab62c4245d548625/explore
+
+- intermediate
+	- CPIS
+		- combined_CPIS.shp # all CPs in Africa sensed in 2000 or 2021, with pivots sensed in both years combined. Has an ID column. Created in code/1_CP_shapefile/1_filter_combine_CPs.py
+		- SSA_CPIS.shp # combined_CPIS.shp but only in sub-Saharan Africa. Has an ID column. Created in code/1_CP_shapefile/2_filter_to_SSA.py
+	- SSA_shp
+		- SSA_Boundaries.shp # Boundaries of only countries in sub-Saharan Africa. Created in code/1_CP_shapefile/2_filter_to_SSA.py
