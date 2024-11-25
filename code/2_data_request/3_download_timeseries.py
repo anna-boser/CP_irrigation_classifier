@@ -1,5 +1,8 @@
 import logging
-from exporter_class import LandsatDataExporter  # Ensure this matches the filename where the class is defined
+from exporter_class import LandsatDataExporter 
+import os
+import sys 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import utils
 
 '''To obtain data for our timeseries we will use this script to call LandsatDataExporter
