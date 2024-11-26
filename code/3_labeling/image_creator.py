@@ -16,7 +16,7 @@ class ImageVisualizer:
         self.visualization_names = ["RGB", "NDVI", "LST"]
         self.band_mappings = {
             "Landsat_4_5_7": {"RED": 3, "GREEN": 2, "BLUE": 1, "NIR": 4, "TIR": 6},
-            "Landsat_8_9": {"RED": 4, "GREEN": 3, "BLUE": 2, "NIR": 5, "TIR": 10}
+            "Landsat_8_9": {"RED": 4, "GREEN": 3, "BLUE": 2, "NIR": 5, "TIR": 9}
         }
 
         if not os.path.exists(output_dir):

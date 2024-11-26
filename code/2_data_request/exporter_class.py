@@ -1,9 +1,11 @@
 import ee
 import geopandas as gpd
-import os
 import logging
 import time
 import random
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import utils
 
 class LandsatDataExporter:
@@ -40,7 +42,7 @@ class LandsatDataExporter:
 
         # Set default for pivot_ids to all Ids in the GeoDataFrame
         if pivot_ids is None:
-            pivot_ids = self.center_pivot_gdf['Id'].tolist()
+            pivot_ids = self.center_pivot_gdf['ID'].tolist()
             random.shuffle(pivot_ids) # shuffle the pivots so that we have a random sample even if we haven't finished downloading all pivots
         
         # remove the completed pivots from the list of pivots to download if a file with completed pivots is provided
@@ -57,7 +59,7 @@ class LandsatDataExporter:
         for index, pivot_id in enumerate(pivot_ids): 
 
             # Retrive the center pivot geometry and buffer it if necessary:
-            row = self.center_pivot_gdf[self.center_pivot_gdf['Id'] == pivot_id].iloc[0]
+            row = self.center_pivot_gdf[self.center_pivot_gdf['ID'] == int(pivot_id)].iloc[0]
             geom = row['geometry']
             if buffer:
                 buffer_distance = 1000 / 100000
@@ -93,8 +95,9 @@ class LandsatDataExporter:
 
                     # Check if there are any images in the filtered collection
                     if collection.size().getInfo() == 0:
-                        logging.info(f'No images found for pivot {pivot_id} in {landsat_name} collection between {start_date} and {end_date}')
-                        pass
+                        error_message = f'No images found for pivot {pivot_id} in {landsat_name} collection between {start_date} and {end_date}'
+                        logging.warning(error_message)
+                        raise ValueError(error_message)
                     else:
 
                         # If month and year are specified, only download the first image, like in 1_gee_request.py
@@ -141,7 +144,7 @@ class LandsatDataExporter:
                 
                     logging.info(f'Finished downloading images for pivot {pivot_id} in {landsat_name} collection between {start_date.format("YYYY-MM-dd").getInfo()} and {end_date.format("YYYY-MM-dd").getInfo()}')
             
-            logging.info(f'Finished downloading images for pivot {pivot_id}')
+            
             
             
             
