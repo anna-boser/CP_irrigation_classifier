@@ -15,7 +15,7 @@ shapefile_path = os.path.join(data_root, 'intermediate/CPIS/SSA_CPIS.shp')
 ssa_geojson_path = os.path.join(data_root, 'raw/map.geojson')
 
 # Output file path
-output_txt_file_path = os.path.join(data_root, '2_data_request/stratified_cp_ids.txt')
+output_txt_file_path = os.path.join(data_root, 'intermediate/2_data_request/stratified_cp_ids.txt')
 output_dir = os.path.dirname(output_txt_file_path)
 os.makedirs(output_dir, exist_ok=True)
 
@@ -50,7 +50,7 @@ unique_grids = center_pivots_in_ssa['grid'].unique()
 total_grids = len(unique_grids)
 
 # Calculate the ideal number of samples per grid cell
-ideal_samples_per_grid = 1000 // total_grids
+ideal_samples_per_grid = 750 // total_grids
 
 # Stratified sampling
 for grid_cell in unique_grids:
@@ -65,9 +65,9 @@ for grid_cell in unique_grids:
         grid_cell_sample = grid_cell_pivots.sample(n=sample_size, random_state=42)
         sampled_cp_ids.extend(grid_cell_sample['ID'])
 
-# If we have fewer than 1000 samples, continue sampling from the largest grid cells
-if len(sampled_cp_ids) < 1000:
-    remaining_needed = 1000 - len(sampled_cp_ids)
+# If we have fewer than 750 samples, continue sampling from the largest grid cells
+if len(sampled_cp_ids) < 750:
+    remaining_needed = 750 - len(sampled_cp_ids)
     additional_samples = []
 
     # Sort grid cells by the number of available pivots
@@ -85,8 +85,8 @@ if len(sampled_cp_ids) < 1000:
 
     sampled_cp_ids.extend(additional_samples)
 
-# Trim the list to exactly 1000 IDs if it exceeds
-sampled_cp_ids = sampled_cp_ids[:1000]
+# Trim the list to exactly 750 IDs if it exceeds
+sampled_cp_ids = sampled_cp_ids[:750]
 
 # Write the list of IDs of sampled center pivots to a text file
 with open(output_txt_file_path, 'w') as f:

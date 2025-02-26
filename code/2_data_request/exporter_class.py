@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import utils
 
 class LandsatDataExporter:
-    def __init__(self, shapefile_path, drive_folder, max_tasks=50):
+    def __init__(self, shapefile_path, drive_folder, max_tasks=250):
         # Initialize GEE
         ee.Initialize()
         
@@ -17,11 +17,9 @@ class LandsatDataExporter:
         self.center_pivot_gdf = gpd.read_file(shapefile_path)
         self.max_tasks = max_tasks
         self.landsat_collections = {
-            'LANDSAT/LT04/C02/T1_L2': (1982, 1993, 'Landsat4'),
             'LANDSAT/LT05/C02/T1_L2': (1984, 2012, 'Landsat5'),
             'LANDSAT/LE07/C02/T1_L2': (1999, 2022, 'Landsat7'),
-            'LANDSAT/LC08/C02/T1_L2': (2013, 2021, 'Landsat8'),
-            'LANDSAT/LC09/C02/T1_L2': (2021, 2023, 'Landsat9')
+            'LANDSAT/LC08/C02/T1_L2': (2013, 2021, 'Landsat8')
         }
 
     def download(self, log_name, pivot_ids=None, months=None, years=None, landsats=None, buffer=True, max_cloud_cover=10, completed_pivot_file=None):
@@ -81,9 +79,15 @@ class LandsatDataExporter:
                         year = years[index]
                         start_date = ee.Date(f'{year}-{month:02d}-01')
                         end_date = ee.Date(f'{year}-{month:02d}-28') # Misses the last few days, but this is the same way as in 1_gee_request.py
+                        
                     else: # make the start and end date correspond to all years the landsat collection is available
                         start_date = ee.Date(f'{start_year}-01-01')
                         end_date = ee.Date(f'{end_year}-12-31')
+
+                    #Store formatted start/end dates as strings. GEE prints a 17 line dictionary during exceptions or warnings in the log,
+                    #formatting allows for reduced clutter and neater logging
+                    start_date_str = start_date.format('YYYY-MM-dd').getInfo()
+                    end_date_str = end_date.format('YYYY-MM-dd').getInfo() 
 
                     # Filter the image collection by date, bounds, and cloud cover
                     collection = ee.ImageCollection(collection_path)\
@@ -95,7 +99,7 @@ class LandsatDataExporter:
 
                     # Check if there are any images in the filtered collection
                     if collection.size().getInfo() == 0:
-                        error_message = f'No images found for pivot {pivot_id} in {landsat_name} collection between {start_date} and {end_date}'
+                        error_message = f'No images found for pivot {pivot_id} in {landsat_name} collection between {start_date_str} and {end_date_str}'
                         logging.warning(error_message)
                         raise ValueError(error_message)
                     else:
@@ -104,7 +108,7 @@ class LandsatDataExporter:
                         if months is not None and years is not None: 
                             image_count = 1
 
-                        logging.info(f'Starting download for {image_count} images for pivot {pivot_id} in {landsat_name} collection between {start_date.format("YYYY-MM-dd").getInfo()} and {end_date.format("YYYY-MM-dd").getInfo()}')
+                        logging.info(f'Starting download for {image_count} images for pivot {pivot_id} in {landsat_name} collection between {start_date_str} and {end_date_str}')
 
                         # Download the images to Google Drive
                         images = collection.toList(image_count)
@@ -142,7 +146,7 @@ class LandsatDataExporter:
                                 with open(completed_pivot_file, 'a') as f:
                                  f.write(f'{pivot_id}\n')
                 
-                    logging.info(f'Finished downloading images for pivot {pivot_id} in {landsat_name} collection between {start_date.format("YYYY-MM-dd").getInfo()} and {end_date.format("YYYY-MM-dd").getInfo()}')
+                    logging.info(f'Finished downloading images for pivot {pivot_id} in {landsat_name} collection between {start_date_str} and {end_date_str}')
             
             
             
@@ -151,9 +155,18 @@ class LandsatDataExporter:
 
     def apply_scale_factors(self, image): # see  https://developers.google.com/earth-engine/landsat_c1_to_c2#colab-python
         # Apply scale factors to the optical and thermal bands
+        if 'ST_B6' in image.bandNames().getInfo():
+            # For Landsats 5 and 7
+            thermal_band = image.select('ST_B6').multiply(0.00341802).add(149.0)
+        elif 'ST_B10' in image.bandNames().getInfo():
+            # For Landsats 8 and 9
+            thermal_band = image.select('ST_B10').multiply(0.00341802).add(149.0)
+        else:
+            raise ValueError("Thermal band not found in image")
+
+        # Scale optical bands (SR_B.* is consistent across Landsats)
         optical_bands = image.select('SR_B.*').multiply(0.0000275).add(-0.2)
-        thermal_band = image.select('ST_B10').multiply(0.00341802).add(149.0)
-        
+
         # Add scaled bands back to the image
         return image.addBands(optical_bands, None, True).addBands(thermal_band, None, True)
 

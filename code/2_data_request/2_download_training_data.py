@@ -15,12 +15,11 @@ import utils
 # Provide file and image count info
 data_root = utils.get_data_root()
 shapefile_path = os.path.join(data_root, 'intermediate/CPIS/SSA_CPIS.shp')
-pivot_id_file = os.path.join(data_root, '2_data_request/stratified_cp_ids.txt')  # File with 1000 pivot IDs
-drive_folder = 'landsat_training_req'
-log_name = 'landsat_image_request.log'
+pivot_id_file = os.path.join(data_root, 'intermediate/2_data_request/stratified_cp_ids.txt')  # File with 1000 pivot IDs
+drive_folder = 'training_data_C02'
+log_name = 'training_data_request.log'
 max_cloud_cover = 10
-images_per_landsat = 200
-
+images_per_landsat = 250
 
 # Setup logging
 logging.basicConfig(filename=log_name, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -37,42 +36,55 @@ except Exception as e:
 # Initialize the LandsatDataExporter
 exporter = LandsatDataExporter(shapefile_path, drive_folder)
 
+# Track processed pivots to avoid duplicates across collections
+processed_pivots = set()
 
-# Iterate over each Landsat collection and request images
+start_index = 0  # Tracks the start index for each Landsat collection
+
 for collection_path, (start_year, end_year, landsat_name) in exporter.landsat_collections.items():
-    
     # Calculate the number of pivots to use for this collection
-    num_pivots = min(images_per_landsat, len(pivot_ids))
-    logging.info(f'Requesting {num_pivots} images for {landsat_name}')
+    num_pivots = min(images_per_landsat, len(pivot_ids) - start_index)  # Adjust for remaining pivots
+    pivot_subset = pivot_ids[start_index:start_index + num_pivots]  # Subset for this collection
+    start_index += num_pivots  # Shift start index for the next collection
 
-    # Iterate over the pivot IDs
-    for pivot_id in pivot_ids[:num_pivots]:
+    logging.info(f'Requesting up to {num_pivots} images for {landsat_name}')
+
+    # Iterate over the subset of pivot IDs
+    for pivot_id in pivot_subset:
+        if pivot_id in processed_pivots:
+            logging.info(f"Skipping pivot ID {pivot_id} as it has already been processed.")
+            continue
+
         retry_count = 0
-        max_retries = 5
+        max_retries = 15
         success = False
 
         while retry_count < max_retries:
             try:
-
                 random_year = random.randint(start_year, end_year)
-                random_month = random.randint(1, 12) 
+                random_month = random.randint(1, 12)
+                
                 # Call the download function
                 exporter.download(
-                log_name=log_name,
-                pivot_ids=[pivot_id],
-                buffer=True,
-                max_cloud_cover=max_cloud_cover,
-                landsats=[landsat_name],
-                months=[random_month],
-                years=[random_year],
-            )
+                    log_name=log_name,
+                    pivot_ids=[pivot_id],
+                    buffer=True,
+                    max_cloud_cover=max_cloud_cover,
+                    landsats=[landsat_name],
+                    months=[random_month],
+                    years=[random_year]
+                )
                 logging.info(f'Successfully downloaded image for pivot ID {pivot_id} from {landsat_name} ({random_month}/{random_year})')
+                processed_pivots.add(pivot_id)  # Mark pivot as processed
+                success = True
                 break  # Exit retry loop if successful
             except ValueError as e:  # Specific error when no images are found
                 retry_count += 1
                 logging.warning(f'Failed to download image for pivot ID {pivot_id} from {landsat_name} ({random_month}/{random_year}): {e}. Retrying ({retry_count}/{max_retries})...')
-            except Exception as e:  
+            except Exception as e:
                 logging.error(f'Unexpected error for pivot ID {pivot_id}: {e}')
                 break
-    else:
-        logging.error(f'Exceeded maximum retries for pivot ID {pivot_id}. Moving to the next pivot.')
+        if not success:
+            logging.error(f'Exceeded maximum retries for pivot ID {pivot_id}. Moving to the next pivot.')
+
+logging.info(f'Finished requesting training data for up to {len(processed_pivots)} unique pivot IDs from {pivot_id_file}')

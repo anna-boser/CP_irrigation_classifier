@@ -14,7 +14,7 @@ shapefile_path = data_root + 'intermediate/CPIS/SSA_CPIS.shp'
 drive_folder = 'landsat_timeseries_request'
 log_name = 'landsat_full_request.log'
 completed_pivot_file = 'completed_pivots.txt'
-input_pivot_file = data_root + '2_data_request/stratified_cp_ids.txt'
+input_pivot_file = data_root + 'intermediate/2_data_request/stratified_cp_ids.txt'
 max_cloud_cover = 100  # Set to 100 to ensure no images are missed
 
 # Setup logging
