@@ -3,13 +3,13 @@ import rasterio
 import pandas as pd
 import os
 import sys 
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import utils
 
 # Directory containing the TIF files
 data_root = utils.get_data_root()
 # Step 1: Read JSON File
-json_file_path = os.path.join(data_root, '4_pipeline_data/training_labels.json')
+json_file_path = os.path.join(data_root, 'intermediate/4_data_pipeline/training_C02_label_data.json')
 with open(json_file_path, 'r') as json_file:
     annotations_data = json.load(json_file)
 
@@ -18,22 +18,42 @@ image_to_annotation = {}
 tif_name_to_id = {}
 current_tif_id = 1
 
-# Create a mapping based on pivot_id, year, and month from the JSON file format
 for annotation in annotations_data:
-    filename = annotation['file_upload']
-    # Extract pivot_id, year, and month from the JSON filename format
-    clean_filename = filename.split('-', 1)[1].replace('_RGB.jpg', '')
-    pivot_id, year, month = clean_filename.split('_')[1:]  # Skip the 'CenterPivot' part
-    key = (pivot_id, year, month)
-    
+    # Example: annotation['data']['filename'] -> "CP_10168_Landsat7_2001-02-17_RGB.jpg"
+    if 'data' not in annotation or 'filename' not in annotation['data']:
+        print("Skipping annotation without 'data.filename' field.")
+        continue
+
+    filename = annotation['data']['filename']
+    base = filename.replace("_RGB.jpg", "")  # -> "CP_10168_Landsat7_2001-02-17"
+
+    parts = base.split("_")  # Expect ["CP", "10168", "Landsat7", "2001-02-17"]
+    if len(parts) < 4:
+        print(f"Skipping annotation with unexpected filename format: {filename}")
+        continue
+
+    pivot_id = parts[1]          # "10168"
+    landsat_version = parts[2]   # "Landsat7"
+    ymd = parts[3].split("-")    # ["2001", "02", "17"]
+    if len(ymd) < 3:
+        print(f"Skipping annotation with unexpected date format: {filename}")
+        continue
+
+    year, month, day = ymd
+
+    # Create a unique key
+    key = (pivot_id, landsat_version, year, month, day)
+
     if key not in tif_name_to_id:
         tif_name_to_id[key] = current_tif_id
         current_tif_id += 1
+
     image_to_annotation[key] = annotation
+
 
 # Step 3: Read the band names from the text file
 band_names = {}
-with open(os.path.join(data_root, 'intermediate/4_data_pipelineband_names_training.txt'), 'r') as band_names_file:
+with open(os.path.join(data_root, 'intermediate/4_data_pipeline/band_names_training.txt'), 'r') as band_names_file:
     current_tif_name = None
     for line in band_names_file:
         if line.startswith('Band names for '):
@@ -47,8 +67,8 @@ data = []
 columns = ['TIF ID', 'TIF Name', 'Landsat', 'Year', 'Month', 'Day', 'X Value', 'Y Value', 'Label', 'X-Coord', 'Y-Coord',
            'B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10', 'B11', 'B12', 'B13', 'B14', 'B15', 'B16', 'B17', 'B18', 'B19']
 
-tif_folder = os.path.join(data_root, 'intermediate/2_data_request/training_data_C02')
-geojson_folder = os.path.join(data_root, '4_data_pipeline/collection_2_geojson') 
+tif_folder = os.path.join(data_root, 'intermediate/training_data_C02')
+geojson_folder = os.path.join(data_root, 'intermediate/4_data_pipeline/collection_2_geojson') 
 for tif_filename in os.listdir(tif_folder):
     if not tif_filename.endswith('.tif'):
         continue
@@ -59,7 +79,7 @@ for tif_filename in os.listdir(tif_folder):
     landsat_name = parts[2]
     year, month, day = parts[3].split('-')
     day = day.split('.')[0]
-    key = (pivot_id, year, month)
+    key = (pivot_id, landsat_version, year, month, day)
 
     if key not in image_to_annotation:
         continue
@@ -81,9 +101,9 @@ for tif_filename in os.listdir(tif_folder):
         top_right = geojson_data['features'][0]['geometry']['coordinates'][0][2]
 
         # Extract annotation data 
-        drafts = annotation.get('drafts', [])
-        if drafts:
-            for result in drafts[0]['result']:
+        annotation_list = annotation.get('annotations', [])
+        if annotation_list:
+            for result in annotation_list[0]['result']:
                 if result['type'] == 'keypointlabels':
                     x_percent = result['value']['x']
                     y_percent = result['value']['y']

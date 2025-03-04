@@ -3,12 +3,12 @@ import rasterio
 import json
 from pyproj import Transformer
 import sys 
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import utils
 
 # Directory containing the TIF files
 data_root = utils.get_data_root()
-tif_directory = os.path.join(data_root, 'intermediate/2_data_request/training_data_C02')
+tif_directory = os.path.join(data_root, 'intermediate/training_data_C02')
 # Output file path
 geojson_directory = os.path.join(data_root, 'intermediate/4_data_pipeline/collection_2_geojson') 
 
