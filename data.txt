@@ -12,3 +12,16 @@
 		- SSA_CPIS.shp # combined_CPIS.shp but only in sub-Saharan Africa. Has an ID column. Created in code/1_CP_shapefile/2_filter_to_SSA.py
 	- SSA_shp
 		- SSA_Boundaries.shp # Boundaries of only countries in sub-Saharan Africa. Created in code/1_CP_shapefile/2_filter_to_SSA.py
+	- 2_data_request	
+		- 'stratified_cp_ids.txt'
+			- Contains a list of stratified ID pivots in Africa, giving a representative subset of pivot ID's used for model training. Created in code/2_data_request/1_stratified_filter_cp.py
+		- training_data_C02
+			- Series of roughly 1000 TIF images gathered from Google Earth Engine which will be used to label for model training. Contains images from landsat collections: 5, 7, 8, and 9.
+			  TIF images have undergone preprocessing of scaling and qa masking prior to being exported. Gathered from code/2_data_request/2_download_training_data.py
+	- 3_labeling
+		- jpeg_training_images
+			- Series of RGB, NDVI, and LST images created from our TIF training data used for labeling annotations. Created in code/3_labeling/image_creator.py
+	- 4_data_pipeline
+		- 'band_names_training.txt'
+			- Contains the band names of each TIF image gathered from Google Earth Engine, allowing insight to the band structure and organization of the training data. Created in code/4_data_pipeline/1_band_names.py
+
