@@ -5,6 +5,9 @@
 		- 'World_CPIS_2021.shp' # from https://github.com/DetectCPIS/global_cpis_shp; see readme for details
 	- Africa_shp
 		- Africa_Boundaries.shp # from https://hub.arcgis.com/datasets/07610d73964e4d39ab62c4245d548625/explore
+	- map.geojson
+		-GeoJSON containing the bounding box coordinates of SSA, used for stratification and obtained from code/1_CP_shapefile/3_map_CPIS.py
+		
 
 - intermediate
 	- CPIS
@@ -12,3 +15,13 @@
 		- SSA_CPIS.shp # combined_CPIS.shp but only in sub-Saharan Africa. Has an ID column. Created in code/1_CP_shapefile/2_filter_to_SSA.py
 	- SSA_shp
 		- SSA_Boundaries.shp # Boundaries of only countries in sub-Saharan Africa. Created in code/1_CP_shapefile/2_filter_to_SSA.py
+	- 2_data_request ## Folder in data/intermediate that contains outputs from code/2_data_request
+		- stratified_cp_ids.txt # Contains 750 stratified center pivot IDs sampled from code/2_data_request/SSA_CPIS.shp by dividing Sub‐Saharan Africa into grid cells and sampling a maximum of 4 pivots per cell; this file serves as the basis for requesting Landsat imagery.
+		- training_data_request.log # A log file recording download requests for training images from various Landsat collections (Landsat5, Landsat7, and Landsat8) using the stratified pivot IDs.
+		- landsat_full_request.log # A log file documenting full time‐series Landsat image requests for each pivot ID, ensuring comprehensive temporal coverage.
+		- SSA_gird_samples.png # PNG crated from code/2_data_request/map_visualizer.py, showing our grid samples from stratisfied_cp_ids.txt.
+
+
+
+
+
